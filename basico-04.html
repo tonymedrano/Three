@@ -1,0 +1,157 @@
+<!--
+  -- @author Tony Medrano
+  --> 
+<!DOCTYPE html>
+    <html>
+    <head>
+    <title>ThreeJs Pratice</title>
+    <script type="text/javascript" src="libs/Three.js"></script>
+        <script type="text/javascript" src="libs/stats.js"></script>
+        <script type="text/javascript" src="libs/dat.gui.min.js"></script>
+    <script type="text/javascript" src="libs/jquery-1.11.1.min.js"></script>
+    <style>
+        body{
+         margin: 0;
+          overflow: hidden;
+        }
+    </style>
+    </head>
+    <body>
+        <!-- Div Status -->
+        <div id="Stats-output"></div>
+        <!-- Div Output -->
+        <div id="WebGL-output">
+        </div>
+        
+    <!-- Javascript code-->
+    <script type="text/javascript">
+        
+        $(function () {
+            var stats = initStats();
+            var scene = new THREE.Scene();
+           // scene.overrideMaterial = new THREE.MeshLambertMaterial({color: 0xffffff}); // Obliga a todos los objetos a usar este material.
+            scene.fog = new THREE.Fog( 0xffffff, 0.050, 220 ); // Crea maáscara en pantalla.
+            var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            var renderer = new THREE.WebGLRenderer();
+            renderer.sortObjects = false;
+            renderer.setClearColor(0xEEEEEE, 1.0);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMapEnabled = true; // Sombra: anñade sombra.
+            
+            // Plano.
+            var planeGeometry = new THREE.PlaneGeometry(80,40,1,1);
+            var planeMaterial = new THREE.MeshLambertMaterial(
+            {color: 0xffffff}); //{color: 0xffffff, wireframe: true}); wireframe para ver las mayas.
+            var plane = new THREE.Mesh(planeGeometry,planeMaterial);
+            plane.receiveShadow = true; // Sombra: anñade sombra.
+            plane.rotation.x=-0.5 * Math.PI;
+            plane.position.x = 15;
+            plane.position.y = -5;
+            plane.position.z = 0;
+            camera.near = 7;
+            camera.far = 139;
+            scene.add(plane);
+            
+            // Posición de la cámara.
+            camera.position.x = -50;
+            camera.position.y = 40;
+            camera.position.z = 50;
+            camera.lookAt(scene.position);
+            
+            // Añadir luz a la escena
+            var spotLight = new THREE.SpotLight( 0xffffff );
+            spotLight.position.set( -40, 60, -10 );
+            spotLight.castShadow = true; // Sombra: para que se apliquen a todos los objetos con sombra.
+            scene.add( spotLight );
+            
+            // add the output of the renderer to the html element
+            $("#WebGL-output").append(renderer.domElement); 
+            
+            var step = 0;
+            // Configurar controles con dat.gui.js
+            var controls = new function() {
+            this.cameraNear = camera.near;
+            this.cameraFar = camera.far;
+            this.rotationSpeed = 0.02;
+            this.numberOfObjects = scene.children.length;
+            
+            /**************** Funciones y objetos aquí ********************/
+            
+            this.addCube = function() {
+                var cubeSize = Math.ceil((Math.random() * 3));
+                var cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+                var cubeMaterial = new THREE.MeshLambertMaterial({color: Math.random() * 0xffffff });
+                var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                cube.castShadow = true;
+                cube.name = "cube-" + scene.children.length;
+
+                // Posición aleatoria en la escena.
+                cube.position.x = -30 + Math.round((Math.random() * 100));
+                cube.position.y = Math.round((Math.random() * 5));
+                cube.position.z = -20 + Math.round((Math.random() * 30));
+
+                // Añade cubo.
+                scene.add(cube);
+                this.numberOfObjects = scene.children.length;
+            };
+            
+            this.removeCube = function() {
+                var allChildren = scene.children;
+                var lastObject = allChildren[allChildren.length-1];
+                if (lastObject instanceof THREE.Mesh) {
+                    scene.remove(lastObject);
+                    this.numberOfObjects = scene.children.length;
+                }
+            }
+            
+            this.outputObjects = function() {
+                console.log(scene.children);
+              }
+            }; // Fin de control
+            
+            /**************** Funciones y objetos termina aquí ********************/
+            
+            // Controles: valores por defecto.
+            var gui = new dat.GUI();
+            gui.add(controls, 'rotationSpeed', 0, 0.5);
+            gui.add(controls, 'addCube');
+            gui.add(controls, 'removeCube');
+            gui.add(controls, 'outputObjects');
+            gui.add(controls, 'numberOfObjects').listen();
+            
+            renderScene();
+
+            function renderScene() {
+               // Actualiza el estado
+               stats.update();
+                
+               scene.traverse(function(e) {
+                if (e instanceof THREE.Mesh && e != plane ) {
+                    e.rotation.x+=controls.rotationSpeed;
+                    e.rotation.y+=controls.rotationSpeed;
+                    e.rotation.z+=controls.rotationSpeed;
+                }
+               });
+                
+                // Es como setInterval pero más robusto y actualiza la posición.
+                requestAnimationFrame(renderScene);
+                renderer.render(scene, camera);
+            };
+            
+            // Esta función se encarga del flujo de control y estado de la aplicación.
+            function initStats() {
+                var stats = new Stats();
+                stats.setMode(0); // 0: fps, 1: ms
+                stats.domElement.style.position = 'absolute';
+                stats.domElement.style.left = '0px';
+                stats.domElement.style.top = '0px';
+                $("#Stats-output").append( stats.domElement );
+                return stats;
+            };
+            
+    });
+        
+    </script>
+    </body>
+    </html>
